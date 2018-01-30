@@ -1,0 +1,55 @@
+- name: Provision Elasticsearch
+  hosts: elasticsearch
+  remote_user: ec2-user
+  sudo: yes
+
+  tasks:
+    - name: Install Java 8 (OpenJDK-8-JRE)
+      yum:
+        name: java-1.8.0-openjdk.x86_64
+        state: latest
+
+    - name: Install Elasticsearch
+      yum:
+        name: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.1.2.rpm
+        state: present
+    
+    - name: Fixing Permissions
+      command: chown root:elasticsearch /data
+
+    - name: Fixing Permissions
+      command: chmod 777 /data
+
+    - name: Copy over jvm config
+      copy:
+        src: files/jvm.options
+        dest: /etc/elasticsearch/jvm.options
+        owner: root
+        group: elasticsearch
+
+    - name: Copy over Elasticsearch config
+      copy:
+        src: files/elasticsearch.yml
+        dest: /etc/elasticsearch/elasticsearch.yml
+        owner: root
+        group: elasticsearch
+
+    - name: Create systemd config directory
+      file:
+        path: /etc/systemd/system/elasticsearch.service.d/
+        recurse: yes
+        state: directory
+
+    - name: Override memlock settings on OS
+      copy:
+        src: files/override.conf
+        dest: /etc/systemd/system/elasticsearch.service.d/override.conf
+        owner: root
+    
+    - name: Reload systemd
+      command: sudo systemctl daemon-reload
+
+    - name: Restart Elasticsearch
+      service:
+        name: elasticsearch
+        state: restarted

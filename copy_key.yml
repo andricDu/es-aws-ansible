@@ -1,0 +1,11 @@
+- name: Provision Elasticsearch
+  hosts: elasticsearch
+  remote_user: ec2-user
+  sudo: yes
+
+  tasks:
+    - name: Add Key
+      authorized_key:
+        user: ec2-user
+        state: present
+        key: "{{ lookup('file', 'files/key.pub') }}"
